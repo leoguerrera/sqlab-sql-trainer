@@ -10,9 +10,10 @@ Ambiente interativo de treinamento SQL rodando direto no navegador — sem insta
 
 ## O que você pode fazer
 
-- Escrever e executar queries SQL diretamente no navegador
-- Praticar os principais comandos: SELECT, WHERE, GROUP BY, JOIN, ORDER BY
-- Testar lógica SQL sem precisar instalar banco de dados
+- Praticar SQL com 120 questões em 3 níveis: Básico, Intermediário e Avançado
+- Escrever e executar queries numa base fictícia de logística e Supply Chain
+- Treinar os principais comandos: SELECT, WHERE, GROUP BY, JOIN, CTEs, Window Functions
+- Sem instalação — roda direto no navegador
 
 ---
 
