@@ -11,6 +11,7 @@ simulando queries e exercícios diretamente no navegador — sem instalação.
 ## Tecnologias
 - HTML5 / CSS3 / JavaScript
 - Interface construída do zero, sem frameworks externos
+- Claude (Anthropic) — co-desenvolvimento via IA generativa
 
 ## Contexto
 Projeto criado durante estudos do curso SQL Impressionador (Hashtag Treinamentos, 90h).
