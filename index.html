@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(0,212,255,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .header .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .header .logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .header .logo-text .sql { color: var(--accent); }
+  .header .logo-text .lab { color: var(--text); opacity: 0.6; }
+
+  .header .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.75rem;
+    border-radius: 2px;
+    letter-spacing: 0.12em;
+    margin-bottom: 1.25rem;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .header h1 {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 0.4rem;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header p {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* SCHEMA CARD */
+  .schema-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .schema-header {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    transition: background 0.2s;
+  }
+
+  .schema-header:hover { background: var(--surface2); }
+  .schema-header .arrow { transition: transform 0.3s; }
+  .schema-header.open .arrow { transform: rotate(180deg); }
+
+  .schema-body {
+    display: none;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .schema-body.open { display: block; }
+
+  .schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .table-card {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+  }
+
+  .table-card .table-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-card .col {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .table-card .col .col-name { color: var(--text); }
+  .table-card .col .col-type { color: var(--accent2); margin-left: 0.4rem; }
+  .table-card .col .pk { color: var(--warn); font-size: 0.55rem; margin-left: 0.3rem; }
+
+  /* LEVEL SELECT */
+  .level-select {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .level-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .level-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .level-btn.basic::before { background: linear-gradient(135deg, rgba(16,185,129,0.1), transparent); }
+  .level-btn.inter::before { background: linear-gradient(135deg, rgba(0,212,255,0.1), transparent); }
+  .level-btn.adv::before { background: linear-gradient(135deg, rgba(124,58,237,0.1), transparent); }
+
+  .level-btn:hover::before { opacity: 1; }
+  .level-btn:hover { transform: translateY(-2px); }
+
+  .level-btn.active.basic { border-color: var(--accent3); box-shadow: 0 0 20px rgba(16,185,129,0.2); }
+  .level-btn.active.inter { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,212,255,0.2); }
+  .level-btn.active.adv { border-color: var(--accent2); box-shadow: 0 0 20px rgba(124,58,237,0.2); }
+
+  .level-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+  .level-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .level-desc { font-size: 0.7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  .start-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--accent), #0090b3);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+  }
+
+  .start-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,212,255,0.3); }
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* QUIZ */
+  .quiz-section { display: none; }
+  .quiz-section.active { display: block; }
+
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .quiz-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .quiz-meta strong { color: var(--accent); font-size: 1rem; }
+
+  .progress-bar {
+    width: 200px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.1em;
+  }
+
+  .question-text {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+  }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: #a8d8ea;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .options { display: grid; gap: 0.6rem; }
+
+  .option {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.85rem 1.1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: left;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+  }
+
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+
+  .option .opt-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 3px;
+    padding: 0.15rem 0.4rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .option.correct { border-color: var(--accent3); background: rgba(16,185,129,0.1); }
+  .option.correct .opt-label { color: var(--accent3); background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+  .option.wrong { border-color: var(--danger); background: rgba(239,68,68,0.08); opacity: 0.7; }
+  .option.wrong .opt-label { color: var(--danger); background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback {
+    display: none;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .feedback.show { display: block; }
+  .feedback.correct { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--accent3); }
+  .feedback.wrong { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+
+  .nav-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    letter-spacing: 0.03em;
+  }
+
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00b8d9; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .btn-danger:hover { background: rgba(124,58,237,0.25); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* RESULTS */
+  .results-section { display: none; }
+  .results-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .score-percent { font-size: clamp(3rem, 8vw, 5rem); font-weight: 800; line-height: 1; margin-bottom: 0.5rem; }
+  .score-fraction { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--muted); margin-bottom: 1rem; }
+  .score-msg { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .score-sub { font-size: 0.8rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  .results-breakdown { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
+
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  .result-item .r-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); width: 60px; flex-shrink: 0; }
+  .result-item .r-text { flex: 1; line-height: 1.4; }
+  .result-item .r-badge { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; padding: 0.2rem 0.5rem; border-radius: 3px; flex-shrink: 0; }
+  .r-badge.ok { background: rgba(16,185,129,0.15); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+  .r-badge.err { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+  .results-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .results-actions .btn { flex: 1; min-width: 140px; padding: 0.9rem; font-size: 0.9rem; }
+
+  .home-section { display: block; }
+  .home-section.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-text"><span class="sql">SQL</span><span class="lab">ab</span></div>
+    </div>
+    <div class="badge">SIMULADOR · SQL SERVER · LOGÍSTICA & SUPPLY CHAIN</div>
+    <h1>Treine <span>SQL</span> do zero ao avançado</h1>
+    <p>120 questões · 3 níveis · base fictícia de logística · SQL Server</p>
+  </div>
+
+  <!-- HOME -->
+  <div class="home-section" id="homeSection">
+
+    <!-- SCHEMA -->
+    <div class="schema-toggle">
+      <div class="schema-header" id="schemaToggle">
+        <span>📋 VER ESQUEMA DO BANCO DE DADOS</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="schema-body" id="schemaBody">
+        <div class="schema-grid">
+          <div class="table-card">
+            <div class="table-name">dbo.Clientes</div>
+            <div class="col"><span class="col-name">id_cliente</span><span class="col-type">INT</span><span class="pk">PK</span></div>
+            <div class="col"><span class="col-name">nome</span><span class="col-type">VARCHAR(100)</span></div>
+            <div class="col"><span class="col-name">cidade</span><span class="col-type">VARCHAR(50)</span></div>
+            <div class="col"><span class="col-name">estado</span><span class="col-type">CHAR(2)</span></div>
+            <div class="col"><span class="col-name">segmento</span><span class="col-type">VARCHAR(30)</span></div>
+          </div>
+          <div class="table-card">
+            <div class="table-name">dbo.Produtos</div>
+            <div class="col"><span class="col-name">id_produto</span><span class="col-type">INT</span><span class="pk">PK</span></div>
+            <div class="col"><span class="col-name">nome_produto</span><span class="col-type">VARCHAR(100)</span></div>
+            <div class="col"><span class="col-name">categoria</span><span class="col-type">VARCHAR(50)</span></div>
+            <div class="col"><span class="col-name">preco_unitario</span><span class="col-type">DECIMAL(10,2)</span></div>
+            <div class="col"><span class="col-name">estoque_atual</span><span class="col-type">INT</span></div>
+          </div>
+          <div class="table-card">
+            <div class="table-name">dbo.Pedidos</div>
+            <div class="col"><span class="col-name">id_pedido</span><span class="col-type">INT</span><span class="pk">PK</span></div>
+            <div class="col"><span class="col-name">id_cliente</span><span class="col-type">INT</span><span class="pk">FK</span></div>
+            <div class="col"><span class="col-name">id_produto</span><span class="col-type">INT</span><span class="pk">FK</span></div>
+            <div class="col"><span class="col-name">data_pedido</span><span class="col-type">DATE</span></div>
+            <div class="col"><span class="col-name">status</span><span class="col-type">VARCHAR(20)</span></div>
+            <div class="col"><span class="col-name">valor_total</span><span class="col-type">DECIMAL(10,2)</span></div>
+          </div>
+          <div class="table-card">
+            <div class="table-name">dbo.Transportadoras</div>
+            <div class="col"><span class="col-name">id_transportadora</span><span class="col-type">INT</span><span class="pk">PK</span></div>
+            <div class="col"><span class="col-name">nome</span><span class="col-type">VARCHAR(100)</span></div>
+            <div class="col"><span class="col-name">modalidade</span><span class="col-type">VARCHAR(30)</span></div>
+            <div class="col"><span class="col-name">custo_por_kg</span><span class="col-type">DECIMAL(6,2)</span></div>
+          </div>
+          <div class="table-card">
+            <div class="table-name">dbo.Entregas</div>
+            <div class="col"><span class="col-name">id_entrega</span><span class="col-type">INT</span><span class="pk">PK</span></div>
+            <div class="col"><span class="col-name">id_pedido</span><span class="col-type">INT</span><span class="pk">FK</span></div>
+            <div class="col"><span class="col-name">id_transportadora</span><span class="col-type">INT</span><span class="pk">FK</span></div>
+            <div class="col"><span class="col-name">data_envio</span><span class="col-type">DATE</span></div>
+            <div class="col"><span class="col-name">data_entrega</span><span class="col-type">DATE</span></div>
+            <div class="col"><span class="col-name">peso_kg</span><span class="col-type">DECIMAL(8,2)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL SELECT -->
+    <div class="level-select">
+      <button class="level-btn basic" data-level="basic" onclick="selectLevel('basic')">
+        <div class="level-icon">🟢</div>
+        <div class="level-name">Básico</div>
+        <div class="level-desc">SELECT · WHERE<br>ORDER BY · DISTINCT</div>
+      </button>
+      <button class="level-btn inter" data-level="inter" onclick="selectLevel('inter')">
+        <div class="level-icon">🔵</div>
+        <div class="level-name">Intermediário</div>
+        <div class="level-desc">JOIN · GROUP BY<br>HAVING · Subqueries</div>
+      </button>
+      <button class="level-btn adv" data-level="adv" onclick="selectLevel('adv')">
+        <div class="level-icon">🟣</div>
+        <div class="level-name">Avançado</div>
+        <div class="level-desc">CTEs · Window Fn<br>PIVOT · Otimização</div>
+      </button>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startQuiz()" disabled>SELECIONE UM NÍVEL PARA COMEÇAR</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-section" id="quizSection">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        Questão <strong id="qNum">1</strong> de 10
+        <span style="margin-left:1rem;" id="levelLabel"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:10%"></div>
+      </div>
+    </div>
+    <div id="questionContainer"></div>
+    <div class="nav-buttons">
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>PRÓXIMA →</button>
+      <button class="btn btn-secondary" onclick="backToHome()">← TROCAR NÍVEL</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="score-card" id="scoreCard"></div>
+    <div class="results-breakdown" id="resultsBreakdown"></div>
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="retryDifferent()">🔄 REFAZER COM OUTRAS QUESTÕES</button>
+      <button class="btn btn-danger" onclick="changeLevel()">📊 TROCAR NÍVEL</button>
+      <button class="btn btn-secondary" onclick="backToHome()">🏠 INÍCIO</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = {
+basic: [
+  {q:"Qual comando seleciona todas as colunas da tabela Clientes?", code:null, opts:["SELECT * FROM Clientes","GET ALL FROM Clientes","FETCH * IN Clientes","SHOW ALL Clientes"], ans:0, exp:"SELECT * FROM tabela é a sintaxe padrão para selecionar todas as colunas."},
+  {q:"Como selecionar apenas os clientes do estado 'SP'?", code:null, opts:["SELECT * FROM Clientes FILTER estado = 'SP'","SELECT * FROM Clientes WHERE estado = 'SP'","SELECT * FROM Clientes HAVING estado = 'SP'","SELECT * FROM Clientes IF estado = 'SP'"], ans:1, exp:"WHERE é a cláusula correta para filtrar linhas em SQL."},
+  {q:"Qual cláusula ordena os resultados em ordem decrescente de valor_total em Pedidos?", code:null, opts:["ORDER BY valor_total ASC","SORT BY valor_total DESC","ORDER BY valor_total DESC","ARRANGE BY valor_total DESC"], ans:2, exp:"ORDER BY coluna DESC ordena do maior para o menor."},
+  {q:"Como contar o total de registros na tabela Produtos?", code:null, opts:["SELECT TOTAL(*) FROM Produtos","SELECT COUNT(*) FROM Produtos","SELECT SUM(*) FROM Produtos","SELECT NUMBER(*) FROM Produtos"], ans:1, exp:"COUNT(*) retorna o número total de linhas."},
+  {q:"Qual comando retorna apenas valores únicos da coluna 'categoria' em Produtos?", code:null, opts:["SELECT UNIQUE categoria FROM Produtos","SELECT DIFFERENT categoria FROM Produtos","SELECT DISTINCT categoria FROM Produtos","SELECT ONLY categoria FROM Produtos"], ans:2, exp:"DISTINCT elimina duplicatas no resultado."},
+  {q:"Como selecionar os 5 primeiros pedidos da tabela Pedidos?", code:null, opts:["SELECT FIRST 5 * FROM Pedidos","SELECT * FROM Pedidos LIMIT 5","SELECT TOP 5 * FROM Pedidos","SELECT * FROM Pedidos ROWS 5"], ans:2, exp:"No SQL Server, usa-se TOP para limitar linhas. LIMIT é sintaxe do MySQL."},
+  {q:"Qual query retorna produtos com estoque_atual maior que 100?", code:null, opts:["SELECT * FROM Produtos WHERE estoque_atual > 100","SELECT * FROM Produtos WHERE estoque_atual GREATER 100","SELECT * FROM Produtos IF estoque_atual > 100","SELECT * FROM Produtos FILTER estoque_atual > 100"], ans:0, exp:"O operador > é usado para comparação maior que."},
+  {q:"Como renomear a coluna 'nome' como 'Nome do Cliente' no resultado?", code:null, opts:["SELECT nome NAME 'Nome do Cliente' FROM Clientes","SELECT nome AS 'Nome do Cliente' FROM Clientes","SELECT nome = 'Nome do Cliente' FROM Clientes","SELECT RENAME nome 'Nome do Cliente' FROM Clientes"], ans:1, exp:"AS é usado para criar aliases (apelidos) para colunas."},
+  {q:"Qual operador filtra pedidos com status igual a 'Entregue' OU 'Enviado'?", code:null, opts:["WHERE status = 'Entregue' AND status = 'Enviado'","WHERE status IN ('Entregue', 'Enviado')","WHERE status BETWEEN 'Entregue' AND 'Enviado'","WHERE status EQUALS 'Entregue' OR 'Enviado'"], ans:1, exp:"IN é mais eficiente que múltiplos OR para verificar listas de valores."},
+  {q:"Como calcular o valor total somando todos os valores_total de Pedidos?", code:null, opts:["SELECT TOTAL(valor_total) FROM Pedidos","SELECT ADD(valor_total) FROM Pedidos","SELECT SUM(valor_total) FROM Pedidos","SELECT SOMA(valor_total) FROM Pedidos"], ans:2, exp:"SUM() é a função de agregação para somar valores numéricos."},
+  {q:"Qual query encontra clientes cujo nome começa com 'Ana'?", code:null, opts:["SELECT * FROM Clientes WHERE nome STARTS 'Ana'","SELECT * FROM Clientes WHERE nome LIKE 'Ana%'","SELECT * FROM Clientes WHERE nome = 'Ana*'","SELECT * FROM Clientes WHERE nome CONTAINS 'Ana'"], ans:1, exp:"LIKE com % no final encontra todos os nomes que começam com 'Ana'."},
+  {q:"Como filtrar pedidos feitos entre 01/01/2024 e 31/12/2024?", code:null, opts:["WHERE data_pedido FROM '2024-01-01' TO '2024-12-31'","WHERE data_pedido BETWEEN '2024-01-01' AND '2024-12-31'","WHERE data_pedido >= '2024-01-01' OR data_pedido <= '2024-12-31'","WHERE data_pedido IN ('2024-01-01', '2024-12-31')"], ans:1, exp:"BETWEEN é inclusivo em ambos os extremos, equivale a >= AND <=."},
+  {q:"Qual função retorna a média de preco_unitario dos produtos?", code:null, opts:["SELECT MEAN(preco_unitario) FROM Produtos","SELECT AVERAGE(preco_unitario) FROM Produtos","SELECT AVG(preco_unitario) FROM Produtos","SELECT MID(preco_unitario) FROM Produtos"], ans:2, exp:"AVG() calcula a média aritmética de uma coluna numérica."},
+  {q:"Como selecionar apenas as colunas 'nome' e 'cidade' de Clientes?", code:null, opts:["SELECT nome, cidade FROM Clientes","SELECT [nome, cidade] FROM Clientes","SELECT (nome, cidade) FROM Clientes","SELECT nome AND cidade FROM Clientes"], ans:0, exp:"Basta listar as colunas separadas por vírgula após o SELECT."},
+  {q:"Qual cláusula filtra produtos com estoque_atual nulo (sem valor)?", code:null, opts:["WHERE estoque_atual = NULL","WHERE estoque_atual IS NULL","WHERE estoque_atual EQUALS NULL","WHERE estoque_atual == NULL"], ans:1, exp:"Em SQL, NULL não pode ser comparado com =. Usa-se IS NULL."},
+  {q:"Como ordenar clientes pelo nome em ordem alfabética (A-Z)?", code:null, opts:["ORDER BY nome DESC","ORDER BY nome ALPHABETICAL","ORDER BY nome ASC","SORT nome A-Z"], ans:2, exp:"ORDER BY coluna ASC é a ordem padrão (crescente / A-Z)."},
+  {q:"Qual o maior valor_total registrado em Pedidos?", code:null, opts:["SELECT TOP(valor_total) FROM Pedidos","SELECT HIGHEST(valor_total) FROM Pedidos","SELECT MAX(valor_total) FROM Pedidos","SELECT BIGGEST(valor_total) FROM Pedidos"], ans:2, exp:"MAX() retorna o maior valor de uma coluna."},
+  {q:"Como filtrar transportadoras com custo_por_kg menor ou igual a 5.00?", code:null, opts:["WHERE custo_por_kg UNDER 5.00","WHERE custo_por_kg =< 5.00","WHERE custo_por_kg <= 5.00","WHERE custo_por_kg NOT > 5.00"], ans:2, exp:"<= é o operador 'menor ou igual' em SQL."},
+  {q:"Qual query retorna produtos que NÃO são da categoria 'Eletrônicos'?", code:null, opts:["WHERE categoria != 'Eletrônicos'","WHERE categoria NOT 'Eletrônicos'","WHERE categoria <> 'Eletrônicos'","A e C estão corretas"], ans:3, exp:"Tanto != quanto <> são operadores de diferença válidos no SQL Server."},
+  {q:"Como contar quantos produtos distintos têm estoque maior que zero?", code:null, opts:["SELECT COUNT(DISTINCT id_produto) FROM Produtos","SELECT COUNT(*) FROM Produtos WHERE estoque_atual > 0","SELECT DISTINCT COUNT(*) FROM Produtos WHERE estoque_atual > 0","SELECT COUNT(id_produto) FROM Produtos WHERE estoque_atual > 0"], ans:1, exp:"COUNT(*) com WHERE filtra apenas os produtos que atendem a condição."},
+  {q:"Qual função retorna o menor peso_kg registrado em Entregas?", code:null, opts:["SELECT MINIMUM(peso_kg) FROM Entregas","SELECT LOWER(peso_kg) FROM Entregas","SELECT MIN(peso_kg) FROM Entregas","SELECT LEAST(peso_kg) FROM Entregas"], ans:2, exp:"MIN() retorna o menor valor de uma coluna numérica."},
+  {q:"Como buscar produtos onde nome_produto contém a palavra 'Tecido' em qualquer posição?", code:null, opts:["WHERE nome_produto LIKE 'Tecido'","WHERE nome_produto LIKE '%Tecido%'","WHERE nome_produto CONTAINS 'Tecido'","WHERE nome_produto = '%Tecido%'"], ans:1, exp:"% antes e depois da palavra captura qualquer posição na string."},
+  {q:"Qual query lista todos os estados distintos na tabela Clientes?", code:null, opts:["SELECT UNIQUE estado FROM Clientes","SELECT ALL DIFFERENT estado FROM Clientes","SELECT DISTINCT estado FROM Clientes ORDER BY estado","SELECT estado WITHOUT REPEATING FROM Clientes"], ans:2, exp:"DISTINCT + ORDER BY é a forma correta de listar valores únicos em ordem."},
+  {q:"Como verificar se data_entrega em Entregas não é nula?", code:null, opts:["WHERE data_entrega != NULL","WHERE data_entrega IS NOT NULL","WHERE data_entrega <> NULL","WHERE data_entrega NOT = NULL"], ans:1, exp:"IS NOT NULL é a forma correta de verificar campos preenchidos."},
+  {q:"Qual cláusula combina duas condições onde AMBAS devem ser verdadeiras?", code:null, opts:["OR","AND","NOT","BOTH"], ans:1, exp:"AND exige que todas as condições sejam verdadeiras simultaneamente."},
+  {q:"Como selecionar pedidos com valor_total entre 500 e 2000?", code:null, opts:["WHERE valor_total BETWEEN 500 AND 2000","WHERE valor_total FROM 500 TO 2000","WHERE valor_total >= 500 OR valor_total <= 2000","WHERE valor_total > 500 AND valor_total < 2000"], ans:0, exp:"BETWEEN é inclusivo e mais legível que >= AND <=."},
+  {q:"Qual função conta apenas valores não nulos em uma coluna específica?", code:null, opts:["COUNT(*) ignora nulos automaticamente","COUNT(coluna) ignora nulos automaticamente","COUNT(NOTNULL coluna)","COUNT(IGNORE NULL coluna)"], ans:1, exp:"COUNT(coluna) ignora NULLs. COUNT(*) conta todas as linhas incluindo NULLs."},
+  {q:"Como concatenar nome e cidade de Clientes em uma única coluna chamada 'Localização'?", code:null, opts:["SELECT nome + ' - ' + cidade AS Localização FROM Clientes","SELECT CONCAT(nome, ' - ', cidade) AS Localização FROM Clientes","SELECT nome JOIN cidade AS Localização FROM Clientes","A e B estão corretas no SQL Server"], ans:3, exp:"SQL Server aceita tanto o operador + quanto CONCAT() para concatenar strings."},
+  {q:"Qual query retorna os 3 produtos mais caros por preco_unitario?", code:null, opts:["SELECT TOP 3 * FROM Produtos SORT BY preco_unitario DESC","SELECT TOP 3 * FROM Produtos ORDER BY preco_unitario DESC","SELECT * FROM Produtos ORDER BY preco_unitario DESC LIMIT 3","SELECT FIRST 3 * FROM Produtos ORDER BY preco_unitario DESC"], ans:1, exp:"No SQL Server: TOP N + ORDER BY DESC. LIMIT é sintaxe MySQL."},
+  {q:"Como filtrar entregas cujo peso_kg seja diferente de 0?", code:null, opts:["WHERE peso_kg NOT 0","WHERE peso_kg IS NOT 0","WHERE peso_kg != 0","WHERE peso_kg <> ZERO"], ans:2, exp:"!= (ou <>) é o operador de diferença para valores numéricos."},
+  {q:"Qual alias é mais adequado para: SELECT COUNT(*) AS ___ FROM Pedidos WHERE status = 'Cancelado'?", code:null, opts:["total_pedidos","qtd_cancelados","count_status","numero_registros"], ans:1, exp:"Um bom alias descreve o que o valor representa no contexto do filtro aplicado."},
+  {q:"Como selecionar o segmento de Clientes evitando repetições e ordenando A-Z?", code:null, opts:["SELECT segmento FROM Clientes ORDER BY segmento","SELECT DISTINCT segmento FROM Clientes ORDER BY segmento ASC","SELECT UNIQUE segmento FROM Clientes SORT ASC","SELECT DIFFERENT segmento FROM Clientes ORDER BY segmento"], ans:1, exp:"DISTINCT + ORDER BY ASC é a combinação correta."},
+  {q:"Qual é a forma correta de comentar uma linha em SQL Server?", code:null, opts:["/* comentário */","# comentário","-- comentário","// comentário"], ans:2, exp:"-- é o comentário de linha em SQL Server. /* */ serve para blocos."},
+  {q:"Como retornar todos os campos de Transportadoras com modalidade 'Aérea' ou 'Expressa'?", code:null, opts:["WHERE modalidade = 'Aérea' AND modalidade = 'Expressa'","WHERE modalidade IN ('Aérea', 'Expressa')","WHERE modalidade LIKE 'Aérea' OR 'Expressa'","WHERE modalidade BETWEEN 'Aérea' AND 'Expressa'"], ans:1, exp:"IN é a forma mais limpa de verificar múltiplos valores possíveis."},
+  {q:"Qual função retorna a data atual no SQL Server?", code:null, opts:["NOW()","TODAY()","GETDATE()","CURRENT_DATE()"], ans:2, exp:"GETDATE() é a função nativa do SQL Server para data/hora atual."},
+  {q:"Como filtrar produtos com preco_unitario acima de 50 E estoque_atual abaixo de 20?", code:null, opts:["WHERE preco_unitario > 50 OR estoque_atual < 20","WHERE preco_unitario > 50 AND estoque_atual < 20","WHERE (preco_unitario, estoque_atual) > (50, 20)","WHERE preco_unitario > 50 ALSO estoque_atual < 20"], ans:1, exp:"AND combina as duas condições exigindo que ambas sejam verdadeiras."},
+  {q:"Qual query retorna os pedidos com valor_total nulo?", code:null, opts:["SELECT * FROM Pedidos WHERE valor_total = NULL","SELECT * FROM Pedidos WHERE valor_total IS NULL","SELECT * FROM Pedidos WHERE valor_total EQUALS NULL","SELECT * FROM Pedidos WHERE valor_total == NULL"], ans:1, exp:"Comparação com NULL sempre usa IS NULL / IS NOT NULL."},
+  {q:"Como contar quantos pedidos existem por status sem usar GROUP BY?", code:null, opts:["Não é possível sem GROUP BY","SELECT COUNT(*) PARTITION BY status FROM Pedidos","SELECT status, COUNT(*) FROM Pedidos","SELECT COUNT(*) FOR EACH status FROM Pedidos"], ans:0, exp:"Para contar por grupo é necessário GROUP BY. Sem ele só se obtém o total geral."},
+  {q:"Qual cláusula define a ordem de execução correta em uma query com WHERE e ORDER BY?", code:null, opts:["ORDER BY → WHERE → SELECT","SELECT → ORDER BY → WHERE","SELECT → WHERE → ORDER BY","WHERE → SELECT → ORDER BY"], ans:2, exp:"A ordem lógica é: FROM → WHERE → SELECT → ORDER BY."},
+  {q:"Como retornar apenas os produtos cuja categoria começa com 'T' e tem exatamente 6 letras?", code:null, opts:["WHERE categoria LIKE 'T_____%'","WHERE categoria LIKE 'T_____'","WHERE categoria STARTS 'T' AND LEN = 6","WHERE categoria LIKE 'T%' AND LENGTH(categoria) = 6"], ans:1, exp:"T seguido de 5 underscores (_) representa exatamente T + 5 caracteres = 6 total."},
+],
+inter: [
+  {q:"Qual JOIN retorna apenas os pedidos que possuem entrega correspondente?", code:null, opts:["LEFT JOIN","RIGHT JOIN","INNER JOIN","FULL OUTER JOIN"], ans:2, exp:"INNER JOIN retorna apenas as linhas que têm correspondência em ambas as tabelas."},
+  {q:"Como contar o total de pedidos por cliente?", code:null, opts:["SELECT id_cliente, COUNT(*) FROM Pedidos","SELECT id_cliente, COUNT(*) FROM Pedidos GROUP BY id_cliente","SELECT id_cliente, SUM(*) FROM Pedidos GROUP BY id_cliente","SELECT COUNT(*) FROM Pedidos PARTITION BY id_cliente"], ans:1, exp:"GROUP BY agrupa as linhas por id_cliente, COUNT(*) conta cada grupo."},
+  {q:"Qual query retorna clientes que NUNCA fizeram um pedido?", code:null, opts:["SELECT c.* FROM Clientes c INNER JOIN Pedidos p ON c.id_cliente = p.id_cliente WHERE p.id_pedido IS NULL","SELECT c.* FROM Clientes c LEFT JOIN Pedidos p ON c.id_cliente = p.id_cliente WHERE p.id_pedido IS NULL","SELECT c.* FROM Clientes c RIGHT JOIN Pedidos p ON c.id_cliente = p.id_cliente WHERE p.id_pedido IS NULL","SELECT * FROM Clientes WHERE id_cliente NOT IN (SELECT id_cliente FROM Pedidos)"], ans:1, exp:"LEFT JOIN + WHERE chave FK IS NULL é o padrão para 'registros sem correspondência'. A opção D também funciona, mas B é mais eficiente."},
+  {q:"Como filtrar grupos com mais de 5 pedidos após um GROUP BY?", code:null, opts:["WHERE COUNT(*) > 5","FILTER COUNT(*) > 5","HAVING COUNT(*) > 5","GROUP FILTER COUNT(*) > 5"], ans:2, exp:"HAVING filtra após o agrupamento. WHERE filtra antes do GROUP BY."},
+  {q:"Qual a query correta para listar nome do cliente e valor_total de seus pedidos?", code:"SELECT c.nome, p.valor_total\nFROM _____ c\n_____ Pedidos p\nON c.id_cliente = p.id_cliente", opts:["FROM Clientes c / LEFT JOIN Pedidos p","FROM Clientes c / INNER JOIN Pedidos p","FROM Pedidos p / LEFT JOIN Clientes c","FROM Pedidos p / RIGHT JOIN Clientes c"], ans:1, exp:"Partindo de Clientes com INNER JOIN em Pedidos retorna apenas clientes com pedidos."},
+  {q:"Como calcular o total faturado por estado dos clientes?", code:null, opts:["SELECT c.estado, SUM(p.valor_total) AS total FROM Pedidos p INNER JOIN Clientes c ON p.id_cliente = c.id_cliente GROUP BY c.estado","SELECT c.estado, SUM(p.valor_total) AS total FROM Pedidos p, Clientes c WHERE p.id_cliente = c.id_cliente","SELECT c.estado, TOTAL(p.valor_total) FROM Pedidos p JOIN Clientes c ON p.id_cliente = c.id_cliente","SELECT estado, SUM(valor_total) FROM Clientes GROUP BY estado"], ans:0, exp:"É necessário JOIN para acessar o estado do cliente a partir de Pedidos e depois agrupar."},
+  {q:"Qual query usa subconsulta para encontrar produtos com preco acima da média?", code:null, opts:["SELECT * FROM Produtos WHERE preco_unitario > AVERAGE(preco_unitario)","SELECT * FROM Produtos WHERE preco_unitario > (SELECT AVG(preco_unitario) FROM Produtos)","SELECT * FROM Produtos HAVING preco_unitario > AVG(preco_unitario)","SELECT * FROM Produtos WHERE preco_unitario > AVG(preco_unitario)"], ans:1, exp:"Subconsulta no WHERE calcula a média primeiro e compara com cada linha."},
+  {q:"Como obter o nome da transportadora junto com cada entrega?", code:null, opts:["SELECT e.*, t.nome FROM Entregas e INNER JOIN Transportadoras t ON e.id_transportadora = t.id_transportadora","SELECT e.*, t.nome FROM Entregas e, Transportadoras t","SELECT * FROM Entregas JOIN Transportadoras USING id_transportadora","SELECT e.id_entrega, t.nome FROM Entregas e CROSS JOIN Transportadoras t"], ans:0, exp:"INNER JOIN com ON especificando a chave de relacionamento é a forma correta."},
+  {q:"Qual GROUP BY está correto para contar entregas por transportadora e mês?", code:null, opts:["GROUP BY id_transportadora, MONTH(data_envio)","GROUP BY id_transportadora AND MONTH(data_envio)","GROUP BY id_transportadora, data_envio","GROUP BY MONTH(data_envio), id_transportadora ORDER BY id_transportadora"], ans:0, exp:"MONTH() extrai o mês da data. As colunas no SELECT que não são agregações devem estar no GROUP BY."},
+  {q:"Como calcular o custo total de frete por entrega (peso × custo_por_kg)?", code:null, opts:["SELECT e.id_entrega, e.peso_kg * t.custo_por_kg AS custo_frete FROM Entregas e JOIN Transportadoras t ON e.id_transportadora = t.id_transportadora","SELECT e.id_entrega, MULTIPLY(e.peso_kg, t.custo_por_kg) FROM Entregas e, Transportadoras t","SELECT e.id_entrega, SUM(e.peso_kg * t.custo_por_kg) FROM Entregas e JOIN Transportadoras t ON e.id_transportadora = t.id_transportadora","SELECT custo_frete = peso_kg * custo_por_kg FROM Entregas, Transportadoras"], ans:0, exp:"Multiplicação direta de colunas de tabelas diferentes via JOIN com alias para nomear o resultado."},
+  {q:"Qual cláusula é executada ANTES do GROUP BY?", code:null, opts:["HAVING","ORDER BY","WHERE","SELECT"], ans:2, exp:"Ordem lógica: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY."},
+  {q:"Como listar produtos que aparecem em pelo menos um pedido?", code:null, opts:["SELECT DISTINCT p.* FROM Produtos p JOIN Pedidos pe ON p.id_produto = pe.id_produto","SELECT * FROM Produtos WHERE id_produto IN (SELECT id_produto FROM Pedidos)","SELECT * FROM Produtos p WHERE EXISTS (SELECT 1 FROM Pedidos WHERE id_produto = p.id_produto)","Todas as alternativas estão corretas"], ans:3, exp:"JOIN com DISTINCT, IN com subquery e EXISTS são três formas equivalentes para este resultado."},
+  {q:"Qual JOIN retorna TODOS os clientes, mesmo sem pedido, e os dados do pedido quando existir?", code:null, opts:["INNER JOIN","RIGHT JOIN Pedidos","LEFT JOIN Pedidos","CROSS JOIN"], ans:2, exp:"LEFT JOIN mantém todos os registros da tabela da esquerda (Clientes) e NULL para os que não têm match."},
+  {q:"Como calcular o tempo de entrega em dias entre data_envio e data_entrega?", code:null, opts:["SELECT DATEDIFF(day, data_envio, data_entrega) AS dias FROM Entregas","SELECT data_entrega - data_envio AS dias FROM Entregas","SELECT DAYS_BETWEEN(data_envio, data_entrega) FROM Entregas","SELECT DATE_DIFF(data_entrega, data_envio) FROM Entregas"], ans:0, exp:"DATEDIFF(unidade, data_inicio, data_fim) é a função correta no SQL Server."},
+  {q:"Qual query encontra o cliente que mais gastou em pedidos?", code:null, opts:["SELECT TOP 1 c.nome, SUM(p.valor_total) AS total FROM Pedidos p JOIN Clientes c ON p.id_cliente = c.id_cliente GROUP BY c.nome ORDER BY total","SELECT TOP 1 c.nome, SUM(p.valor_total) AS total FROM Pedidos p JOIN Clientes c ON p.id_cliente = c.id_cliente GROUP BY c.nome ORDER BY total DESC","SELECT c.nome, MAX(p.valor_total) FROM Pedidos p JOIN Clientes c ON p.id_cliente = c.id_cliente","SELECT c.nome, SUM(p.valor_total) FROM Pedidos p, Clientes c GROUP BY c.nome HAVING MAX"], ans:1, exp:"TOP 1 + SUM + GROUP BY + ORDER BY DESC retorna o maior gasto. Sem DESC ordena ascendente."},
+  {q:"Como usar alias de tabela corretamente numa query com JOIN?", code:"SELECT ___.nome, ___.valor_total\nFROM Clientes ___\nJOIN Pedidos ___ ON c.id_cliente = p.id_cliente", opts:["Clientes.nome, Pedidos.valor_total / FROM Clientes AS c / JOIN Pedidos AS p","c.nome, p.valor_total / FROM Clientes c / JOIN Pedidos p","c.nome, p.valor_total / FROM Clientes AS Clientes / JOIN Pedidos AS Pedidos","nome, valor_total / FROM Clientes c / JOIN Pedidos p"], ans:1, exp:"O alias é definido após o nome da tabela (sem AS obrigatório) e usado como prefixo nas colunas."},
+  {q:"Qual resultado a query abaixo produz?", code:"SELECT modalidade, COUNT(*) AS qtd,\n  AVG(custo_por_kg) AS custo_medio\nFROM Transportadoras\nGROUP BY modalidade\nHAVING COUNT(*) > 1", opts:["Todas as transportadoras agrupadas por modalidade","Modalidades com mais de uma transportadora cadastrada, com média de custo","Apenas a transportadora mais cara de cada modalidade","Erro: AVG não pode ser usado com GROUP BY"], ans:1, exp:"GROUP BY + HAVING COUNT(*) > 1 filtra apenas os grupos com mais de um registro."},
+  {q:"Como listar pedidos com o nome do produto (não apenas o id)?", code:null, opts:["SELECT pe.id_pedido, pr.nome_produto FROM Pedidos pe JOIN Produtos pr ON pe.id_produto = pr.id_produto","SELECT id_pedido, nome_produto FROM Pedidos WHERE id_produto = Produtos.id_produto","SELECT pe.*, pr.nome_produto FROM Pedidos pe, Produtos pr","SELECT id_pedido, (SELECT nome_produto FROM Produtos) FROM Pedidos"], ans:0, exp:"JOIN explícito com ON é a forma correta e mais eficiente."},
+  {q:"Qual é a diferença entre WHERE e HAVING?", code:null, opts:["Não há diferença, são sinônimos","WHERE filtra linhas antes do agrupamento; HAVING filtra grupos depois do GROUP BY","HAVING filtra linhas individuais; WHERE filtra grupos","WHERE é para números; HAVING é para texto"], ans:1, exp:"WHERE é executado antes do GROUP BY; HAVING é executado após, filtrando os grupos formados."},
+  {q:"Como contar pedidos por mês ignorando o ano?", code:null, opts:["GROUP BY data_pedido","GROUP BY MONTH(data_pedido) ORDER BY MONTH(data_pedido)","GROUP BY YEAR(data_pedido), MONTH(data_pedido)","GROUP BY FORMAT(data_pedido, 'MM')"], ans:1, exp:"MONTH() extrai o número do mês. Se quiser mês+ano, usa YEAR() + MONTH() juntos."},
+  {q:"Qual subconsulta retorna ids de produtos nunca pedidos?", code:null, opts:["SELECT id_produto FROM Produtos WHERE id_produto NOT IN (SELECT DISTINCT id_produto FROM Pedidos)","SELECT id_produto FROM Produtos WHERE id_produto IN (SELECT id_produto FROM Pedidos WHERE id_produto IS NULL)","SELECT id_produto FROM Produtos LEFT JOIN Pedidos ON Produtos.id_produto = Pedidos.id_produto","SELECT id_produto FROM Produtos NOT EXISTS Pedidos"], ans:0, exp:"NOT IN com subquery é a forma direta de encontrar registros sem correspondência."},
+  {q:"Como somar o peso total de entregas por transportadora?", code:null, opts:["SELECT id_transportadora, SUM(peso_kg) FROM Entregas GROUP BY id_transportadora","SELECT id_transportadora, TOTAL(peso_kg) FROM Entregas GROUP BY id_transportadora","SELECT SUM(peso_kg) FROM Entregas PARTITION BY id_transportadora","SELECT id_transportadora, peso_kg FROM Entregas ORDER BY id_transportadora"], ans:0, exp:"SUM() + GROUP BY pela chave estrangeira é o padrão para agregar por entidade relacionada."},
+  {q:"Qual função extrai o ano de uma data no SQL Server?", code:null, opts:["YEAR(data_pedido)","EXTRACT(YEAR FROM data_pedido)","DATE_PART('year', data_pedido)","GETYEAR(data_pedido)"], ans:0, exp:"YEAR() é a função nativa do SQL Server. EXTRACT é sintaxe PostgreSQL."},
+  {q:"Como retornar o nome do cliente e o total de pedidos dele em uma única query?", code:null, opts:["SELECT c.nome, COUNT(p.id_pedido) AS total_pedidos FROM Clientes c LEFT JOIN Pedidos p ON c.id_cliente = p.id_cliente GROUP BY c.nome","SELECT c.nome, COUNT(*) FROM Clientes c, Pedidos p GROUP BY c.nome","SELECT nome, total_pedidos FROM Clientes JOIN (SELECT COUNT(*) FROM Pedidos)","SELECT c.nome, p.count FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente"], ans:0, exp:"LEFT JOIN garante que clientes sem pedidos apareçam com COUNT = 0."},
+  {q:"O que CROSS JOIN faz?", code:null, opts:["Retorna apenas as linhas em comum entre duas tabelas","Retorna todas as combinações possíveis entre as linhas das duas tabelas","Retorna todos os registros de ambas as tabelas com NULL quando não há match","Ordena o resultado por uma coluna cruzada"], ans:1, exp:"CROSS JOIN produz o produto cartesiano — cada linha da tabela A combinada com cada linha da tabela B."},
+  {q:"Como encontrar entregas com tempo de entrega acima de 7 dias?", code:null, opts:["WHERE DATEDIFF(day, data_envio, data_entrega) > 7","WHERE data_entrega - data_envio > 7","WHERE DAYS(data_entrega, data_envio) > 7","WHERE TIME_DIFF(data_envio, data_entrega) > 7"], ans:0, exp:"DATEDIFF(day, inicio, fim) no SQL Server calcula a diferença em dias."},
+  {q:"Qual é a função correta para converter uma string em maiúsculas no SQL Server?", code:null, opts:["CAPITALIZE(string)","TOUPPER(string)","UPPER(string)","UPPERCASE(string)"], ans:2, exp:"UPPER() converte texto para maiúsculas. LOWER() converte para minúsculas."},
+  {q:"Como listar clientes com mais de 3 pedidos usando HAVING?", code:null, opts:["SELECT c.nome FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente GROUP BY c.nome HAVING COUNT(p.id_pedido) > 3","SELECT c.nome FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente WHERE COUNT(*) > 3","SELECT c.nome, COUNT(*) FROM Clientes c, Pedidos p HAVING COUNT(*) > 3","SELECT c.nome FROM Clientes c WHERE (SELECT COUNT(*) FROM Pedidos WHERE id_cliente = c.id_cliente) > 3"], ans:0, exp:"JOIN + GROUP BY + HAVING é o padrão para filtrar clientes por quantidade de pedidos."},
+  {q:"O que a query abaixo retorna?", code:"SELECT p.id_produto,\n  COUNT(pe.id_pedido) AS vezes_pedido\nFROM Produtos p\nLEFT JOIN Pedidos pe ON p.id_produto = pe.id_produto\nGROUP BY p.id_produto\nORDER BY vezes_pedido DESC", opts:["Apenas produtos que foram pedidos ao menos uma vez","Todos os produtos com a contagem de vezes que foram pedidos (incluindo 0)","Erro: ORDER BY não pode usar alias","Apenas o produto mais pedido"], ans:1, exp:"LEFT JOIN garante que produtos sem pedidos apareçam com COUNT = 0."},
+  {q:"Como renomear uma tabela dentro de uma query sem alterar o banco?", code:null, opts:["RENAME TABLE Clientes AS c","FROM Clientes AS c ou FROM Clientes c","SET ALIAS Clientes = c","CALL Clientes c"], ans:1, exp:"O alias de tabela é definido no FROM — com ou sem AS. Não altera o banco de dados."},
+  {q:"Como agrupar pedidos por ano e contar quantos foram feitos em cada ano?", code:null, opts:["SELECT YEAR(data_pedido), COUNT(*) FROM Pedidos GROUP BY YEAR(data_pedido) ORDER BY YEAR(data_pedido)","SELECT data_pedido, COUNT(*) FROM Pedidos GROUP BY data_pedido","SELECT YEAR(data_pedido) AS ano, COUNT(*) AS qtd FROM Pedidos GROUP BY YEAR(data_pedido)","A e C estão corretas"], ans:3, exp:"Ambas funcionam — a opção C usa aliases que tornam o resultado mais legível."},
+  {q:"O que UNION faz em SQL?", code:null, opts:["Combina duas tabelas com JOIN","Combina os resultados de duas queries removendo duplicatas","Combina os resultados de duas queries mantendo todas as linhas","B e C dependem se é UNION ou UNION ALL"], ans:3, exp:"UNION remove duplicatas; UNION ALL mantém todas as linhas incluindo duplicatas. São operações diferentes."},
+  {q:"Como usar EXISTS para verificar se um cliente tem entregas associadas?", code:null, opts:["WHERE EXISTS (SELECT 1 FROM Pedidos p JOIN Entregas e ON p.id_pedido = e.id_pedido WHERE p.id_cliente = c.id_cliente)","WHERE EXISTS Entregas WHERE id_cliente = c.id_cliente","WHERE c.id_cliente IN EXISTS (SELECT FROM Entregas)","WHERE EXISTS = 1 IN (SELECT id_cliente FROM Entregas)"], ans:0, exp:"EXISTS verifica se a subquery retorna ao menos uma linha. SELECT 1 é mais eficiente que SELECT *."},
+  {q:"Qual é o propósito do alias 'AS custo_total'?", code:"SELECT e.peso_kg * t.custo_por_kg AS custo_total\nFROM Entregas e\nJOIN Transportadoras t ON e.id_transportadora = t.id_transportadora", opts:["Cria uma nova coluna permanente no banco","Nomeia o resultado da expressão calculada no resultado da query","Armazena o valor em uma variável","Substitui as colunas originais"], ans:1, exp:"AS define o nome da coluna calculada apenas no resultado da query — não altera o banco."},
+  {q:"Como somar o valor_total apenas dos pedidos com status 'Entregue'?", code:null, opts:["SELECT SUM(valor_total) FROM Pedidos HAVING status = 'Entregue'","SELECT SUM(valor_total) FROM Pedidos WHERE status = 'Entregue'","SELECT SUM(valor_total) WHERE status = 'Entregue' FROM Pedidos","SELECT valor_total.SUM FROM Pedidos WHERE status = 'Entregue'"], ans:1, exp:"WHERE filtra as linhas antes da agregação SUM()."},
+  {q:"Qual a diferença entre INNER JOIN e LEFT JOIN?", code:null, opts:["INNER JOIN é mais rápido; LEFT JOIN é mais lento","INNER JOIN retorna apenas matches; LEFT JOIN retorna tudo da esquerda + matches da direita","LEFT JOIN retorna apenas matches; INNER JOIN retorna todos da esquerda","Não há diferença prática"], ans:1, exp:"A diferença fundamental: INNER JOIN = apenas interseção. LEFT JOIN = tabela esquerda completa + dados correspondentes."},
+  {q:"O que a cláusula GROUP BY exige sobre as colunas no SELECT?", code:null, opts:["Todas as colunas do SELECT devem estar no GROUP BY ou em funções de agregação","Nenhuma coluna do SELECT precisa estar no GROUP BY","Apenas colunas numéricas precisam estar no GROUP BY","O SELECT pode ter qualquer coluna independente do GROUP BY"], ans:0, exp:"Colunas no SELECT sem agregação (SUM, COUNT, AVG etc.) obrigatoriamente devem estar no GROUP BY."},
+  {q:"Como calcular a média de dias de entrega por transportadora?", code:null, opts:["SELECT id_transportadora, AVG(DATEDIFF(day, data_envio, data_entrega)) AS media_dias FROM Entregas GROUP BY id_transportadora","SELECT id_transportadora, AVG(data_entrega - data_envio) FROM Entregas GROUP BY id_transportadora","SELECT id_transportadora, MEAN(DATEDIFF(data_envio, data_entrega)) FROM Entregas GROUP BY id_transportadora","SELECT AVG(dias) FROM Entregas WHERE dias = DATEDIFF(day, data_envio, data_entrega) GROUP BY id_transportadora"], ans:0, exp:"AVG() dentro de DATEDIFF() calcula a média dos dias de entrega por grupo."},
+  {q:"Qual resultado o operador BETWEEN retorna para datas?", code:"WHERE data_pedido BETWEEN '2024-01-01' AND '2024-03-31'", opts:["Apenas datas estritamente entre as duas datas (exclusivo)","Datas incluindo exatamente as duas datas informadas (inclusivo)","Datas após 01/01/2024 até antes de 31/03/2024","Apenas datas no mês de março de 2024"], ans:1, exp:"BETWEEN é sempre inclusivo em ambos os extremos."},
+  {q:"Como listar nome do produto e nome do cliente usando dois JOINs?", code:null, opts:["SELECT c.nome, pr.nome_produto FROM Pedidos pe JOIN Clientes c ON pe.id_cliente = c.id_cliente JOIN Produtos pr ON pe.id_produto = pr.id_produto","SELECT c.nome, pr.nome_produto FROM Clientes c, Produtos pr WHERE c.id_cliente = pr.id_produto","SELECT * FROM Clientes JOIN Produtos USING(id_pedido)","SELECT c.nome, pr.nome_produto FROM Pedidos pe, Clientes c, Produtos pr"], ans:0, exp:"Pedidos é a tabela central que conecta Clientes e Produtos via suas chaves estrangeiras."},
+  {q:"Como verificar o plano de execução de uma query no SQL Server?", code:null, opts:["EXPLAIN query","SHOW PLAN FOR query","SET SHOWPLAN_ALL ON antes da query","ANALYZE query"], ans:2, exp:"No SQL Server, SET SHOWPLAN_ALL ON ou a opção 'Estimated Execution Plan' no SSMS exibem o plano de execução."},
+],
+adv: [
+  {q:"O que é uma CTE (Common Table Expression) e qual sua vantagem?", code:null, opts:["Uma tabela temporária salva no disco; vantagem: persiste entre sessões","Uma subquery nomeada definida com WITH; vantagem: legibilidade e reúso na mesma query","Um índice especial para acelerar joins; vantagem: performance","Uma view permanente; vantagem: pode ser usada em múltiplas queries"], ans:1, exp:"CTE é uma subquery com nome definida por WITH, existindo apenas durante a execução da query. Melhora legibilidade sem criar objetos permanentes."},
+  {q:"Qual Window Function calcula o total acumulado de valor_total por data?", code:null, opts:["SUM(valor_total) OVER (ORDER BY data_pedido ROWS UNBOUNDED PRECEDING)","SUM(valor_total) GROUP BY data_pedido","ACCUMULATE(valor_total) OVER (ORDER BY data_pedido)","RUNNING_SUM(valor_total) PARTITION BY data_pedido"], ans:0, exp:"SUM() OVER (ORDER BY coluna ROWS UNBOUNDED PRECEDING) é o padrão para running total em Window Functions."},
+  {q:"Qual é a diferença entre ROW_NUMBER(), RANK() e DENSE_RANK()?", code:null, opts:["São sinônimos — geram o mesmo resultado","ROW_NUMBER() nunca repete; RANK() pula números em empates; DENSE_RANK() não pula","RANK() nunca repete; ROW_NUMBER() pula em empates; DENSE_RANK() é igual a RANK()","Apenas DENSE_RANK() funciona com PARTITION BY"], ans:1, exp:"ROW_NUMBER: 1,2,3,4. RANK em empate: 1,1,3,4. DENSE_RANK em empate: 1,1,2,3."},
+  {q:"Como criar uma CTE que lista clientes com total gasto acima de 10.000?", code:null, opts:["WITH ClientesTop AS (\n  SELECT c.nome, SUM(p.valor_total) AS total\n  FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente\n  GROUP BY c.nome\n)\nSELECT * FROM ClientesTop WHERE total > 10000","CREATE TEMP ClientesTop AS SELECT c.nome, SUM(p.valor_total) FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente HAVING SUM > 10000","WITH ClientesTop (nome, total) VALUES (SELECT c.nome, SUM(p.valor_total) FROM Clientes c JOIN Pedidos p GROUP BY c.nome) WHERE total > 10000","SELECT INTO ClientesTop c.nome, SUM(p.valor_total) AS total FROM Clientes c JOIN Pedidos p ON c.id_cliente = p.id_cliente WHERE total > 10000"], ans:0, exp:"Sintaxe correta: WITH nome AS (query) SELECT ... FROM nome WHERE condição."},
+  {q:"O que PARTITION BY faz dentro de uma Window Function?", code:null, opts:["Divide os dados em partições físicas no disco","Divide o conjunto de linhas em grupos para calcular a função independentemente em cada grupo","Substitui o GROUP BY agrupando e agregando os dados","Filtra as linhas antes de aplicar a função de janela"], ans:1, exp:"PARTITION BY é o GROUP BY das Window Functions — define os grupos sem colapsar as linhas."},
+  {q:"Qual query usa LAG() para comparar o valor_total com o pedido anterior do mesmo cliente?", code:null, opts:["SELECT id_pedido, valor_total, LAG(valor_total) OVER (PARTITION BY id_cliente ORDER BY data_pedido) AS pedido_anterior FROM Pedidos","SELECT id_pedido, valor_total, PREV(valor_total) PARTITION BY id_cliente FROM Pedidos","SELECT id_pedido, valor_total, valor_total - LAG(valor_total, 1) FROM Pedidos ORDER BY id_cliente","SELECT id_pedido, LAG(valor_total, id_cliente) OVER (ORDER BY data_pedido) FROM Pedidos"], ans:0, exp:"LAG(coluna) OVER (PARTITION BY grupo ORDER BY ordem) acessa o valor da linha anterior dentro de cada partição."},
+  {q:"Como ranquear transportadoras pelo menor custo médio de frete?", code:null, opts:["SELECT nome, AVG(custo_por_kg) AS media, RANK() OVER (ORDER BY AVG(custo_por_kg) ASC) AS rank FROM Transportadoras GROUP BY nome","SELECT nome, custo_por_kg, RANK() OVER (ORDER BY custo_por_kg) FROM Transportadoras","SELECT nome, DENSE_RANK() OVER (PARTITION BY custo_por_kg ORDER BY nome) FROM Transportadoras","SELECT nome, ROW_NUMBER() OVER (ORDER BY custo_por_kg DESC) FROM Transportadoras GROUP BY nome, custo_por_kg"], ans:0, exp:"GROUP BY para calcular AVG, depois RANK() OVER (ORDER BY media ASC) para ranquear do mais barato ao mais caro."},
+  {q:"Qual a sintaxe correta de uma CTE recursiva no SQL Server?", code:null, opts:["WITH RECURSIVE cte AS (SELECT ... UNION ALL SELECT ...)","WITH cte AS (SELECT ... UNION ALL SELECT ... FROM cte ...)","WITH LOOP cte AS (SELECT ...)","RECURSIVE WITH cte AS (SELECT ... UNION SELECT ...)"], ans:1, exp:"No SQL Server, CTEs recursivas usam WITH nome AS (âncora UNION ALL parte recursiva referenciando a própria CTE)."},
+  {q:"O que NTILE(4) faz sobre uma coluna de valores?", code:null, opts:["Divide os resultados em 4 grupos iguais (quartis) e atribui um número de 1 a 4","Retorna os 4 maiores valores","Cria 4 buckets e coloca o valor em cada bucket multiplicado por 4","Calcula o percentil 4 de cada linha"], ans:0, exp:"NTILE(N) divide o conjunto ordenado em N grupos e atribui o número do grupo a cada linha — útil para quartis e percentis."},
+  {q:"Como calcular o percentual de cada pedido sobre o total geral?", code:null, opts:["SELECT id_pedido, valor_total / SUM(valor_total) OVER () * 100 AS pct FROM Pedidos","SELECT id_pedido, valor_total / SUM(valor_total) * 100 AS pct FROM Pedidos","SELECT id_pedido, PERCENT(valor_total) OVER () FROM Pedidos","SELECT id_pedido, valor_total / COUNT(*) OVER () * 100 FROM Pedidos"], ans:0, exp:"SUM() OVER () sem PARTITION BY calcula o total geral. Dividir por ele dá o percentual de cada linha."},
+  {q:"Qual é a diferença entre uma CTE e uma subquery inline?", code:null, opts:["Não há diferença de performance ou funcionalidade","CTE pode ser referenciada múltiplas vezes na query; subquery inline não","Subquery inline é mais rápida em todos os casos","CTE salva dados em disco; subquery inline é processada em memória"], ans:1, exp:"CTEs podem ser referenciadas várias vezes na mesma query; subqueries inline precisam ser reescritas cada vez que usadas."},
+  {q:"O que o operador APPLY faz no SQL Server?", code:null, opts:["Aplica uma função escalar a cada linha","Executa uma função com valor de tabela para cada linha do conjunto externo","Substitui o JOIN quando as tabelas têm a mesma estrutura","Aplica uma CTE a múltiplas queries"], ans:1, exp:"CROSS APPLY e OUTER APPLY executam uma TVF (Table-Valued Function) ou subquery correlacionada para cada linha da query externa."},
+  {q:"Como usar PIVOT para transformar linhas de status em colunas?", code:null, opts:["SELECT * FROM (SELECT status, valor_total FROM Pedidos) t PIVOT (SUM(valor_total) FOR status IN ([Entregue],[Cancelado],[Pendente])) pv","SELECT PIVOT(status) OVER (FOR valor_total) FROM Pedidos","PIVOT Pedidos ON status VALUES (Entregue, Cancelado, Pendente)","SELECT status, CASE WHEN status='Entregue' THEN SUM(valor_total) END FROM Pedidos GROUP BY status"], ans:0, exp:"PIVOT requer: query fonte como subquery, função de agregação, coluna a pivotar e valores desejados nas colunas."},
+  {q:"Qual é a função de LEAD() em Window Functions?", code:null, opts:["Retorna o valor da linha anterior no conjunto ordenado","Retorna o valor da próxima linha no conjunto ordenado","Retorna o primeiro valor de uma partição","Retorna o valor mais recente baseado em data"], ans:1, exp:"LEAD(coluna, n) acessa n linhas à frente. LAG(coluna, n) acessa n linhas atrás."},
+  {q:"Como criar um índice não clusterizado para buscas por id_cliente em Pedidos?", code:null, opts:["CREATE INDEX idx_pedidos_cliente ON Pedidos(id_cliente)","CREATE NONCLUSTERED INDEX idx_pedidos_cliente ON Pedidos(id_cliente)","ADD INDEX idx_pedidos_cliente FOR Pedidos ON id_cliente","CREATE FAST INDEX ON Pedidos FOR id_cliente"], ans:1, exp:"CREATE NONCLUSTERED INDEX nome ON tabela(coluna) é a sintaxe correta no SQL Server."},
+  {q:"O que é um índice CLUSTERIZADO e qual sua limitação?", code:null, opts:["Organiza os dados fisicamente pela coluna indexada; limitação: só pode existir um por tabela","É um índice criado em cluster; limitação: funciona apenas em tabelas com JOIN","Organiza apenas o índice, não os dados; limitação: ocupa mais espaço","É criado automaticamente para todas as colunas; limitação: lento em writes"], ans:0, exp:"O índice clusterizado define a ordem física dos dados na tabela. Cada tabela pode ter apenas um — geralmente a PK."},
+  {q:"Como usar STRING_AGG para concatenar nomes de produtos por categoria?", code:null, opts:["SELECT categoria, STRING_AGG(nome_produto, ', ') AS produtos FROM Produtos GROUP BY categoria","SELECT categoria, CONCAT_GROUP(nome_produto) FROM Produtos GROUP BY categoria","SELECT categoria, GROUP_CONCAT(nome_produto, ', ') FROM Produtos GROUP BY categoria","SELECT categoria, LISTAGG(nome_produto, ', ') FROM Produtos GROUP BY categoria"], ans:0, exp:"STRING_AGG(valor, separador) é a função do SQL Server 2017+ para concatenar strings agrupadas. GROUP_CONCAT é MySQL."},
+  {q:"O que faz COALESCE() e quando usá-lo?", code:null, opts:["Retorna o maior valor entre múltiplos argumentos","Retorna o primeiro valor não nulo de uma lista de argumentos","Converte NULL em zero automaticamente","Combina duas colunas em uma única coluna"], ans:1, exp:"COALESCE(val1, val2, ...) retorna o primeiro argumento não NULL — útil para tratar NULLs com valores padrão."},
+  {q:"Como calcular um running total de peso_kg por data usando Window Function?", code:null, opts:["SELECT data_envio, peso_kg, SUM(peso_kg) OVER (ORDER BY data_envio ROWS UNBOUNDED PRECEDING) AS peso_acumulado FROM Entregas","SELECT data_envio, peso_kg, RUNNING_SUM(peso_kg) ORDER BY data_envio FROM Entregas","SELECT data_envio, SUM(peso_kg) OVER (PARTITION BY data_envio) FROM Entregas","SELECT data_envio, peso_kg + LAG(peso_kg) OVER (ORDER BY data_envio) FROM Entregas"], ans:0, exp:"SUM() OVER (ORDER BY data ROWS UNBOUNDED PRECEDING) acumula todos os valores desde o início até a linha atual."},
+  {q:"Qual é o benefício de usar EXISTS vs IN em subqueries de grande volume?", code:null, opts:["Não há diferença — o otimizador trata os dois da mesma forma","EXISTS para mais de procurar quando encontra o primeiro match; IN precisa processar toda a subquery","IN é sempre mais rápido que EXISTS","EXISTS só funciona com subqueries correlacionadas"], ans:1, exp:"EXISTS é mais eficiente com grandes volumes porque usa short-circuit — para ao encontrar a primeira linha correspondente."},
+  {q:"Como usar CASE WHEN para classificar pedidos por faixa de valor?", code:null, opts:["SELECT id_pedido, CASE WHEN valor_total < 500 THEN 'Baixo' WHEN valor_total BETWEEN 500 AND 2000 THEN 'Médio' ELSE 'Alto' END AS faixa FROM Pedidos","SELECT id_pedido, IF valor_total < 500 THEN 'Baixo' ELSE 'Alto' FROM Pedidos","SELECT id_pedido, SWITCH(valor_total, 500, 'Baixo', 2000, 'Médio') FROM Pedidos","SELECT id_pedido, CASE valor_total < 500 THEN 'Baixo' ELSE 'Alto' FROM Pedidos"], ans:0, exp:"CASE WHEN condição THEN resultado ... ELSE resultado_padrão END é a sintaxe correta no SQL Server."},
+  {q:"O que é uma Stored Procedure e qual sua vantagem sobre queries ad-hoc?", code:null, opts:["Um tipo de índice; vantagem: acelera qualquer query automaticamente","Um bloco de código SQL salvo no servidor; vantagens: reúso, segurança e plano de execução em cache","Uma view com parâmetros; vantagem: mais legível","Um arquivo SQL externo; vantagem: pode ser versionado"], ans:1, exp:"Stored Procedures são compiladas e armazenadas no servidor — o plano de execução é cacheado, melhorando performance em chamadas repetidas."},
+  {q:"Como usar FIRST_VALUE() para retornar o menor valor de pedido de cada cliente?", code:null, opts:["SELECT id_pedido, FIRST_VALUE(valor_total) OVER (PARTITION BY id_cliente ORDER BY valor_total ASC) AS menor_pedido FROM Pedidos","SELECT id_pedido, MIN(valor_total) OVER (PARTITION BY id_cliente) FROM Pedidos","SELECT id_pedido, FIRST_VALUE(valor_total) OVER (ORDER BY id_cliente) FROM Pedidos","A e B retornam o mesmo resultado"], ans:3, exp:"FIRST_VALUE() OVER (PARTITION BY cliente ORDER BY valor ASC) e MIN() OVER (PARTITION BY cliente) retornam o mesmo resultado."},
+  {q:"Qual técnica melhora performance em queries que leem a mesma subquery várias vezes?", code:null, opts:["Criar um índice na subquery","Usar CTE ou tabela temporária para materializar o resultado uma única vez","Usar DISTINCT em todas as colunas","Duplicar a tabela com SELECT INTO"], ans:1, exp:"CTEs e tabelas temporárias evitam recalcular a mesma subquery múltiplas vezes, melhorando performance."},
+  {q:"O que TRY_CAST() faz de diferente do CAST() padrão?", code:null, opts:["TRY_CAST é mais rápido que CAST","TRY_CAST retorna NULL em vez de erro quando a conversão falha","TRY_CAST funciona apenas com tipos numéricos","TRY_CAST converte automaticamente todos os tipos compatíveis"], ans:1, exp:"TRY_CAST retorna NULL em falha de conversão; CAST lança um erro que quebra a query."},
+  {q:"Como particionar Entregas por transportadora e ranquear por peso?", code:null, opts:["SELECT id_entrega, id_transportadora, peso_kg, RANK() OVER (PARTITION BY id_transportadora ORDER BY peso_kg DESC) AS rank_peso FROM Entregas","SELECT id_entrega, RANK(peso_kg) GROUP BY id_transportadora FROM Entregas","SELECT id_entrega, ROW_NUMBER() OVER (ORDER BY id_transportadora, peso_kg) FROM Entregas","SELECT RANK() OVER (id_transportadora) FROM Entregas ORDER BY peso_kg"], ans:0, exp:"RANK() OVER (PARTITION BY transportadora ORDER BY peso DESC) classifica as entregas dentro de cada transportadora."},
+  {q:"O que é e para que serve uma tabela temporária (#temp) no SQL Server?", code:null, opts:["Uma view sem persistência; serve para leitura apenas","Uma tabela armazenada em tempdb durante a sessão; serve para armazenar resultados intermediários","Um alias de tabela que existe apenas na query","Uma tabela criptografada para dados sensíveis"], ans:1, exp:"Tabelas #temp são criadas em tempdb, existem durante a sessão e são destruídas automaticamente — úteis para quebrar queries complexas."},
+  {q:"Qual função calcula o percentual acumulado em relação ao total da partição?", code:null, opts:["PERCENT_RANK() OVER (PARTITION BY categoria ORDER BY preco_unitario)","PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY preco_unitario)","CUME_DIST() OVER (PARTITION BY categoria ORDER BY preco_unitario)","A e C retornam resultados similares mas com escalas diferentes"], ans:3, exp:"PERCENT_RANK vai de 0 a 1 excluindo o último; CUME_DIST vai de 1/N a 1 incluindo todos — ambos medem posição relativa mas com escalas diferentes."},
+  {q:"Como usar uma CTE para calcular ticket médio por cliente e filtrar acima da média geral?", code:null, opts:["WITH ticket AS (SELECT id_cliente, AVG(valor_total) AS media FROM Pedidos GROUP BY id_cliente) SELECT * FROM ticket WHERE media > (SELECT AVG(media) FROM ticket)","WITH ticket AS (SELECT AVG(valor_total) FROM Pedidos) SELECT * FROM Pedidos WHERE valor_total > ticket","SELECT id_cliente FROM Pedidos WHERE AVG(valor_total) > (SELECT AVG(valor_total) FROM Pedidos) GROUP BY id_cliente","SELECT id_cliente, AVG(valor_total) FROM Pedidos GROUP BY id_cliente HAVING AVG(valor_total) > AVG(AVG(valor_total))"], ans:0, exp:"A CTE materializa o ticket por cliente; a query externa filtra usando a mesma CTE como subquery — isso é o poder das CTEs reutilizáveis."},
+  {q:"O que o hint NOLOCK faz e qual seu risco?", code:null, opts:["Bloqueia a tabela para escrita durante a leitura; risco: deadlock","Permite leitura de dados não commitados (dirty reads); risco: leitura de dados inconsistentes","Desativa índices para forçar table scan; risco: query mais lenta","Bloqueia novos INSERTs durante SELECT; risco: timeout em alta concorrência"], ans:1, exp:"WITH(NOLOCK) permite ler dados de transações não commitadas — melhora concorrência mas pode retornar dados que serão revertidos por ROLLBACK."},
+  {q:"Como identificar queries lentas no SQL Server sem ferramentas externas?", code:null, opts:["Apenas com ferramentas pagas como Datadog","Usando sys.dm_exec_query_stats e sys.dm_exec_sql_text para consultar DMVs","Ativando o modo DEBUG no SSMS","Usando EXPLAIN como no PostgreSQL"], ans:1, exp:"As DMVs (Dynamic Management Views) do SQL Server — especialmente sys.dm_exec_query_stats — expõem estatísticas de execução de queries sem custo adicional."},
+  {q:"Como usar UNPIVOT para transformar colunas em linhas?", code:null, opts:["SELECT id_entrega, tipo_data, data_valor FROM Entregas UNPIVOT (data_valor FOR tipo_data IN (data_envio, data_entrega)) u","SELECT UNPIVOT(data_envio, data_entrega) FROM Entregas","UNPIVOT Entregas ON (data_envio, data_entrega) INTO (tipo, valor)","SELECT * FROM Entregas TRANSFORM COLUMNS (data_envio, data_entrega) TO ROWS"], ans:0, exp:"UNPIVOT requer: alias do valor, nome da nova coluna categórica e lista de colunas a transformar em linhas."},
+  {q:"O que é e quando usar CROSS APPLY vs OUTER APPLY?", code:null, opts:["São sinônimos — comportamento idêntico","CROSS APPLY funciona como INNER JOIN (exclui linhas sem match); OUTER APPLY como LEFT JOIN (mantém linhas sem match)","CROSS APPLY é para Window Functions; OUTER APPLY é para subqueries","OUTER APPLY é mais rápido; CROSS APPLY mantém índices ativos"], ans:1, exp:"CROSS APPLY = INNER JOIN semântico com TVF. OUTER APPLY = LEFT JOIN — mantém linhas da tabela externa mesmo sem resultado na função/subquery."},
+  {q:"Como usar FORMAT() para exibir data_pedido no formato 'dd/MM/yyyy'?", code:null, opts:["FORMAT(data_pedido, 'dd/MM/yyyy')","CONVERT(VARCHAR, data_pedido, 103)","DATE_FORMAT(data_pedido, '%d/%m/%Y')","A e B funcionam no SQL Server"], ans:3, exp:"FORMAT() é mais flexível. CONVERT com estilo 103 também produz dd/mm/yyyy no SQL Server. Ambos são válidos."},
+  {q:"Qual é a diferença entre DELETE, TRUNCATE e DROP?", code:null, opts:["São equivalentes — apenas têm sintaxe diferente","DELETE remove linhas com filtro e pode ser revertido; TRUNCATE remove tudo sem log por linha; DROP remove a tabela inteira","TRUNCATE pode ter WHERE; DELETE não pode; DROP é igual a TRUNCATE","DROP pode ser revertido; DELETE e TRUNCATE não podem"], ans:1, exp:"DELETE: linha a linha, com log, reversível com WHERE. TRUNCATE: remove tudo, mínimo log, mais rápido. DROP: remove a estrutura da tabela."},
+  {q:"Como calcular o percentual de pedidos 'Entregue' sobre o total?", code:null, opts:["SELECT COUNT(CASE WHEN status='Entregue' THEN 1 END) * 100.0 / COUNT(*) OVER () FROM Pedidos","SELECT SUM(CASE WHEN status='Entregue' THEN 1.0 ELSE 0 END) / COUNT(*) * 100 FROM Pedidos","SELECT PERCENT(status='Entregue') FROM Pedidos","A usa Window Function; B usa agregação simples — ambas funcionam"], ans:3, exp:"A usa OVER() para manter granularidade de linha. B agrega em uma única linha. Ambas calculam o percentual corretamente."},
+  {q:"O que é um plano de execução e por que analisá-lo?", code:null, opts:["É o histórico de queries executadas; útil para auditoria","É a sequência de operações que o SQL Server usa para executar uma query; analisar identifica gargalos como table scans e sorts caros","É o agendamento de execução de procedures; útil para otimizar horários","É o diagrama de relacionamento das tabelas; útil para documentação"], ans:1, exp:"O plano de execução mostra como o SQL Server executa cada etapa — Table Scan indica falta de índice; Hash Join em grandes tabelas indica oportunidade de otimização."},
+  {q:"Como usar ROW_NUMBER() para retornar apenas a entrega mais recente de cada pedido?", code:null, opts:["SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY id_pedido ORDER BY data_envio DESC) AS rn FROM Entregas) t WHERE rn = 1","SELECT TOP 1 * FROM Entregas PARTITION BY id_pedido ORDER BY data_envio DESC","SELECT * FROM Entregas WHERE ROW_NUMBER() = 1 ORDER BY id_pedido, data_envio DESC","SELECT FIRST(*) FROM Entregas GROUP BY id_pedido ORDER BY data_envio DESC"], ans:0, exp:"ROW_NUMBER() em subquery com WHERE rn = 1 é o padrão para 'top N por grupo' em SQL Server."},
+  {q:"Qual é a utilidade de WITH (INDEX = nome_indice) em uma query?", code:null, opts:["Cria um índice temporário para a query","Força o otimizador a usar um índice específico em vez do escolhido automaticamente","Desativa todos os outros índices da tabela","Exibe o índice usado no resultado da query"], ans:1, exp:"Query hints como WITH(INDEX) forçam o uso de um índice específico — útil quando o otimizador faz uma escolha subótima."},
+  {q:"Como usar uma CTE com múltiplos blocos encadeados para análise de custo de frete?", code:null, opts:["WITH\n  entregas_custo AS (\n    SELECT e.id_entrega, e.peso_kg * t.custo_por_kg AS custo\n    FROM Entregas e JOIN Transportadoras t ON e.id_transportadora = t.id_transportadora\n  ),\n  resumo AS (\n    SELECT id_entrega, custo, AVG(custo) OVER () AS media_geral\n    FROM entregas_custo\n  )\nSELECT * FROM resumo WHERE custo > media_geral","WITH entregas_custo AS (...) WITH resumo AS (...) SELECT * FROM resumo","WITH (entregas_custo AS (...), resumo AS (...)) SELECT * FROM resumo","WITH entregas_custo AS (...); WITH resumo AS (...); SELECT * FROM resumo"], ans:0, exp:"Múltiplas CTEs são separadas por vírgula dentro de um único WITH. Cada CTE pode referenciar as anteriores."},
+  {q:"O que o operador EXCEPT faz no SQL Server?", code:null, opts:["Retorna linhas da primeira query que não existem na segunda query","Retorna linhas em comum entre duas queries","Retorna todas as linhas de ambas as queries sem duplicatas","Exclui colunas específicas de um SELECT"], ans:0, exp:"EXCEPT retorna linhas únicas da primeira query que não aparecem na segunda — equivalente ao MINUS do Oracle."},
+  {q:"Como usar PERCENTILE_CONT para calcular a mediana de valor_total?", code:null, opts:["SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY valor_total) OVER () AS mediana FROM Pedidos","SELECT MEDIAN(valor_total) FROM Pedidos","SELECT AVG(valor_total) OVER () AS mediana FROM Pedidos","SELECT PERCENTILE(valor_total, 50) FROM Pedidos"], ans:0, exp:"PERCENTILE_CONT(0.5) calcula o percentil 50 (mediana) de forma contínua. WITHIN GROUP define a ordenação. É uma Window Function analítica."},
+]
+};
+
+let currentLevel = null, currentQuestions = [], currentIndex = 0, score = 0, answered = [], selectedAnswer = null;
+let usedIndices = { basic: [], inter: [], adv: [] };
+
+function selectLevel(level) {
+  currentLevel = level;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.level-btn[data-level="${level}"]`).classList.add('active');
+  const labels = { basic: '🟢 INICIAR — NÍVEL BÁSICO', inter: '🔵 INICIAR — NÍVEL INTERMEDIÁRIO', adv: '🟣 INICIAR — NÍVEL AVANÇADO' };
+  const btn = document.getElementById('startBtn');
+  btn.textContent = labels[level];
+  btn.disabled = false;
+}
+
+function getRandomQuestions(level) {
+  const pool = questions[level];
+  const used = usedIndices[level];
+  let available = pool.map((_, i) => i).filter(i => !used.includes(i));
+  if (available.length < 10) { usedIndices[level] = []; available = pool.map((_, i) => i); }
+  const selected = [];
+  while (selected.length < 10) {
+    const ri = Math.floor(Math.random() * available.length);
+    selected.push(available.splice(ri, 1)[0]);
+  }
+  selected.forEach(i => usedIndices[level].push(i));
+  return selected.map(i => ({ ...pool[i] }));
+}
+
+function startQuiz() {
+  if (!currentLevel) return;
+  currentQuestions = getRandomQuestions(currentLevel);
+  currentIndex = 0; score = 0; answered = []; selectedAnswer = null;
+  document.getElementById('homeSection').classList.add('hidden');
+  document.getElementById('quizSection').classList.add('active');
+  document.getElementById('resultsSection').classList.remove('active');
+  const levelNames = { basic: '🟢 BÁSICO', inter: '🔵 INTERMEDIÁRIO', adv: '🟣 AVANÇADO' };
+  document.getElementById('levelLabel').textContent = levelNames[currentLevel];
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = currentQuestions[currentIndex];
+  document.getElementById('qNum').textContent = currentIndex + 1;
+  document.getElementById('progressFill').style.width = `${(currentIndex + 1) * 10}%`;
+  document.getElementById('nextBtn').disabled = true;
+  selectedAnswer = null;
+  const labels = ['A','B','C','D'];
+  let html = `<div class="question-card">
+    <div class="question-number">QUESTÃO ${currentIndex + 1} / 10</div>
+    <div class="question-text">${q.q}</div>`;
+  if (q.code) html += `<div class="code-block">${q.code}</div>`;
+  html += `<div class="options">`;
+  q.opts.forEach((opt, i) => {
+    html += `<button class="option" onclick="selectAnswer(${i})" id="opt_${i}">
+      <span class="opt-label">${labels[i]}</span><span>${opt}</span></button>`;
+  });
+  html += `</div><div class="feedback" id="feedback"></div></div>`;
+  document.getElementById('questionContainer').innerHTML = html;
+  document.getElementById('nextBtn').textContent = currentIndex === 9 ? 'VER RESULTADO →' : 'PRÓXIMA →';
+}
+
+function selectAnswer(idx) {
+  if (selectedAnswer !== null) return;
+  selectedAnswer = idx;
+  const q = currentQuestions[currentIndex];
+  const isCorrect = idx === q.ans;
+  if (isCorrect) score++;
+  answered.push({ q: q.q, chosen: idx, correct: q.ans, ok: isCorrect });
+  const labels = ['A','B','C','D'];
+  document.querySelectorAll('.option').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.ans) btn.classList.add('correct');
+    else if (i === idx && !isCorrect) btn.classList.add('wrong');
+  });
+  const fb = document.getElementById('feedback');
+  fb.className = `feedback show ${isCorrect ? 'correct' : 'wrong'}`;
+  fb.innerHTML = isCorrect ? `✓ Correto! ${q.exp}` : `✗ Incorreto. Resposta correta: ${labels[q.ans]}. ${q.exp}`;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion() {
+  if (currentIndex < 9) { currentIndex++; renderQuestion(); } else { showResults(); }
+}
+
+function showResults() {
+  document.getElementById('quizSection').classList.remove('active');
+  document.getElementById('resultsSection').classList.add('active');
+  const pct = Math.round((score / 10) * 100);
+  let color = '#ef4444';
+  if (pct >= 90) color = '#7c3aed';
+  else if (pct >= 70) color = '#00d4ff';
+  else if (pct >= 50) color = '#10b981';
+  else if (pct >= 30) color = '#f59e0b';
+  const msgs = [[0,30,'Continue praticando','Revise os fundamentos e tente novamente'],[30,50,'Bom começo!','Você está no caminho certo'],[50,70,'Progresso sólido','Você domina boa parte do conteúdo'],[70,90,'Muito bem!','Você tem uma base forte em SQL'],[90,101,'Excelente!','Domínio completo do nível']];
+  let msg = msgs[0];
+  for (const m of msgs) { if (pct >= m[0] && pct < m[1]) { msg = m; break; } }
+  const levelNames = { basic:'Básico', inter:'Intermediário', adv:'Avançado' };
+  document.getElementById('scoreCard').innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-bottom:0.75rem;letter-spacing:0.1em">
+      RESULTADO · SQLab · NÍVEL ${levelNames[currentLevel].toUpperCase()}
+    </div>
+    <div class="score-percent" style="color:${color}">${pct}%</div>
+    <div class="score-fraction">${score} acertos de 10 questões</div>
+    <div class="score-msg">${msg[2]}</div>
+    <div class="score-sub">${msg[3]}</div>`;
+  const labels = ['A','B','C','D'];
+  document.getElementById('resultsBreakdown').innerHTML = answered.map((a,i) =>
+    `<div class="result-item">
+      <span class="r-num">Q${i+1}</span>
+      <span class="r-text">${a.q.substring(0,60)}${a.q.length>60?'...':''}</span>
+      <span class="r-badge ${a.ok?'ok':'err'}">${a.ok?'✓ '+labels[a.correct]:'✗ '+labels[a.chosen]+'→'+labels[a.correct]}</span>
+    </div>`).join('');
+}
+
+function retryDifferent() { startQuiz(); }
+function changeLevel() { backToHome(); }
+function backToHome() {
+  document.getElementById('homeSection').classList.remove('hidden');
+  document.getElementById('quizSection').classList.remove('active');
+  document.getElementById('resultsSection').classList.remove('active');
+}
+
+document.getElementById('schemaToggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('schemaBody').classList.toggle('open');
+});
+</script>
+</body>
+</html>
