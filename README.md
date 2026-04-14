@@ -4,7 +4,7 @@ Ambiente interativo de treinamento SQL rodando direto no navegador — sem insta
 
 **[▶ Acessar o SQLab](https://leoguerrera.github.io/sqlab-sql-trainer/)**
 
-![SQLab interface](screenshot.png)
+![SQLab interface](screenshot.jpg)
 
 ---
 
